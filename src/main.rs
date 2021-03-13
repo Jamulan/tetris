@@ -1,10 +1,13 @@
 #[macro_use]
 extern crate glium;
 extern crate image;
-mod lm;
 
-use glium::{glutin, Surface};
+mod lm;
+mod tetris;
+
 use crate::lm::Mat4;
+use crate::tetris::PlaySpace;
+use glium::{glutin, Surface};
 
 fn main() {
     // setup glium
@@ -22,9 +25,15 @@ fn main() {
     }
     implement_vertex!(Vertex, position);
 
-    let vertex1 = Vertex { position: [-0.5, -0.5] };
-    let vertex2 = Vertex { position: [ 0.0,  0.5] };
-    let vertex3 = Vertex { position: [ 0.5, -0.25] };
+    let vertex1 = Vertex {
+        position: [-0.5, -0.5],
+    };
+    let vertex2 = Vertex {
+        position: [0.0, 0.5],
+    };
+    let vertex3 = Vertex {
+        position: [0.5, -0.25],
+    };
     let shape = vec![vertex1, vertex2, vertex3];
 
     let vertex_buffer = glium::VertexBuffer::new(&display, &shape).unwrap();
@@ -49,15 +58,9 @@ fn main() {
         }
     "#;
 
-    let program = glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None).unwrap();
-
-    use std::io::Cursor;
-    let image = image::load(Cursor::new(&include_bytes!("cat.png")[..]),
-                            image::ImageFormat::Png).unwrap().to_rgba8();
-    let image_dimensions = image.dimensions();
-    let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
-
-    let texture = glium::texture::Texture2d::new(&display, image).unwrap();
+    let program =
+        glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None)
+            .unwrap();
 
     // Real(tm) render loop
     events_loop.run(move |event, _, control_flow| {
@@ -66,7 +69,7 @@ fn main() {
                 glutin::event::WindowEvent::CloseRequested => {
                     *control_flow = glutin::event_loop::ControlFlow::Exit;
                     return;
-                },
+                }
                 _ => return,
             },
             glutin::event::Event::NewEvents(cause) => match cause {
@@ -77,10 +80,9 @@ fn main() {
             _ => return,
         }
 
-        let next_frame_time = std::time::Instant::now() +
-            std::time::Duration::from_nanos(16_666_667);
+        let next_frame_time =
+            std::time::Instant::now() + std::time::Duration::from_nanos(16_666_667);
         *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
-
 
         let mut target = display.draw();
         target.clear_color(0.0, 0.0, 0.0, 1.0);
@@ -92,8 +94,19 @@ fn main() {
             [ 0.0, 0.0, 0.0, 1.0f32], ],
             my_color: (1.0f32, 0.0f32, 0.0f32),
         };
-        target.draw(&vertex_buffer, &indices, &program, &uniforms,
-                    &Default::default()).unwrap();
+        target
+            .draw(
+                &vertex_buffer,
+                &indices,
+                &program,
+                &uniforms,
+                &Default::default(),
+            )
+            .unwrap();
         target.finish().unwrap();
     });
+}
+
+fn render_play_space(play_space: PlaySpace) {
+    // TODO
 }
