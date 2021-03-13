@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate glium;
+extern crate image;
 
 use glium::{glutin, Surface};
 
@@ -16,13 +17,14 @@ fn main() {
     #[derive(Copy, Clone)]
     struct Vertex {
         position: [f32; 2],
+        tex_coords: [f32; 2],
     }
 
-    implement_vertex!(Vertex, position);
+    implement_vertex!(Vertex, position, tex_coords);
 
-    let vertex1 = Vertex { position: [-0.5, -0.5] };
-    let vertex2 = Vertex { position: [ 0.0,  0.5] };
-    let vertex3 = Vertex { position: [ 0.5, -0.25] };
+    let vertex1 = Vertex { position: [-0.5, -0.5], tex_coords: [0.0, 0.0] };
+    let vertex2 = Vertex { position: [ 0.0,  0.5], tex_coords: [0.0, 1.0] };
+    let vertex3 = Vertex { position: [ 0.5, -0.25], tex_coords: [1.0, 0.0] };
     let shape = vec![vertex1, vertex2, vertex3];
 
     let vertex_buffer = glium::VertexBuffer::new(&display, &shape).unwrap();
@@ -31,31 +33,37 @@ fn main() {
     let vertex_shader_src = r#"
         #version 140
         in vec2 position;
-        uniform float t;
+        in vec2 tex_coords;
+        out vec2 v_tex_coords;
+        uniform mat4 matrix;
         void main() {
-            vec2 pos = position;
-            pos.x += t;
-            gl_Position = vec4(position, 0.0, 1.0);
+            v_tex_coords = tex_coords;
+            gl_Position = matrix * vec4(position, 0.0, 1.0);
         }
     "#;
 
     let fragment_shader_src = r#"
         #version 140
+        in vec2 v_tex_coords;
         out vec4 color;
+        uniform sampler2D tex;
         void main() {
-            color = vec4(1.0, 0.0, 0.0, 1.0);
+            color = texture(tex, v_tex_coords);
         }
     "#;
 
     let program = glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None).unwrap();
 
-    // Real(tm) render loop
-    let mut t: f32 = -0.5;
-    events_loop.run(move |event, _, control_flow| {
-        let next_frame_time = std::time::Instant::now() +
-            std::time::Duration::from_nanos(16_666_667);
-        *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
+    use std::io::Cursor;
+    let image = image::load(Cursor::new(&include_bytes!("cat.png")[..]),
+                            image::ImageFormat::Png).unwrap().to_rgba8();
+    let image_dimensions = image.dimensions();
+    let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
 
+    let texture = glium::texture::Texture2d::new(&display, image).unwrap();
+
+    // Real(tm) render loop
+    events_loop.run(move |event, _, control_flow| {
         match event {
             glutin::event::Event::WindowEvent { event, .. } => match event {
                 glutin::event::WindowEvent::CloseRequested => {
@@ -72,14 +80,23 @@ fn main() {
             _ => return,
         }
 
-        t += 0.0002;
-        if t > 0.5 {
-            t = -0.5;
-        }
+        let next_frame_time = std::time::Instant::now() +
+            std::time::Duration::from_nanos(16_666_667);
+        *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
+
 
         let mut target = display.draw();
         target.clear_color(0.0, 0.0, 0.0, 1.0);
-        target.draw(&vertex_buffer, &indices, &program, &uniform! { t: t },
+        let uniforms = uniform! {
+        matrix: [
+            [ 1.0, 0.0, 0.0, 0.0],
+            [ 0.0, 1.0, 0.0, 0.0],
+            [ 0.0, 0.0, 1.0, 0.0],
+            [ 0.0, 0.0, 0.0, 1.0f32], ],
+            tex: &texture,
+        };
+        target.draw(&vertex_buffer, &indices, &program, &uniforms,
                     &Default::default()).unwrap();
         target.finish().unwrap();
-    });}
+    });
+}
