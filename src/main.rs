@@ -1,8 +1,10 @@
 #[macro_use]
 extern crate glium;
 extern crate image;
+mod lm;
 
 use glium::{glutin, Surface};
+use crate::lm::Mat4;
 
 fn main() {
     // setup glium
@@ -17,14 +19,12 @@ fn main() {
     #[derive(Copy, Clone)]
     struct Vertex {
         position: [f32; 2],
-        tex_coords: [f32; 2],
     }
+    implement_vertex!(Vertex, position);
 
-    implement_vertex!(Vertex, position, tex_coords);
-
-    let vertex1 = Vertex { position: [-0.5, -0.5], tex_coords: [0.0, 0.0] };
-    let vertex2 = Vertex { position: [ 0.0,  0.5], tex_coords: [0.0, 1.0] };
-    let vertex3 = Vertex { position: [ 0.5, -0.25], tex_coords: [1.0, 0.0] };
+    let vertex1 = Vertex { position: [-0.5, -0.5] };
+    let vertex2 = Vertex { position: [ 0.0,  0.5] };
+    let vertex3 = Vertex { position: [ 0.5, -0.25] };
     let shape = vec![vertex1, vertex2, vertex3];
 
     let vertex_buffer = glium::VertexBuffer::new(&display, &shape).unwrap();
@@ -33,22 +33,19 @@ fn main() {
     let vertex_shader_src = r#"
         #version 140
         in vec2 position;
-        in vec2 tex_coords;
-        out vec2 v_tex_coords;
+        out vec3 my_color;
         uniform mat4 matrix;
         void main() {
-            v_tex_coords = tex_coords;
             gl_Position = matrix * vec4(position, 0.0, 1.0);
         }
     "#;
 
     let fragment_shader_src = r#"
         #version 140
-        in vec2 v_tex_coords;
         out vec4 color;
-        uniform sampler2D tex;
+        uniform vec3 my_color;
         void main() {
-            color = texture(tex, v_tex_coords);
+            color = vec4(my_color, 1.0);
         }
     "#;
 
@@ -93,7 +90,7 @@ fn main() {
             [ 0.0, 1.0, 0.0, 0.0],
             [ 0.0, 0.0, 1.0, 0.0],
             [ 0.0, 0.0, 0.0, 1.0f32], ],
-            tex: &texture,
+            my_color: (1.0f32, 0.0f32, 0.0f32),
         };
         target.draw(&vertex_buffer, &indices, &program, &uniforms,
                     &Default::default()).unwrap();
