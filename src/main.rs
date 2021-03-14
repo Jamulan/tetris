@@ -76,13 +76,20 @@ fn main() {
             std::time::Instant::now() + std::time::Duration::from_nanos(16_666_667);
         *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
 
-        main_play_space.tick();
+        main_play_space.tick(tetris::Action::None);
 
         let mut target = display.draw();
         target.clear_color(0.0, 0.0, 0.0, 1.0);
 
         // draw main space
-        let points = vec![[-0.5f32, 1.0], [-0.5, -1.0], [0.5, 1.0], [-0.5, -1.0], [0.5, 1.0], [0.5, -1.0]];
+        let points = vec![
+            [-0.5f32, 1.0],
+            [-0.5, -1.0],
+            [0.5, 1.0],
+            [-0.5, -1.0],
+            [0.5, 1.0],
+            [0.5, -1.0],
+        ];
         let points_proper = points_to_points_proper(points, main_play_space.color);
 
         let uniforms = uniform! {
@@ -92,7 +99,13 @@ fn main() {
         let vertex_buffer = glium::VertexBuffer::new(&display, &points_proper).unwrap();
         let index_buffer = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
         target
-            .draw(&vertex_buffer, &index_buffer, &program, &uniforms, &Default::default())
+            .draw(
+                &vertex_buffer,
+                &index_buffer,
+                &program,
+                &uniforms,
+                &Default::default(),
+            )
             .unwrap();
 
         // draw settled blocks
@@ -101,8 +114,14 @@ fn main() {
         for i in 0..simple_space.len() {
             for j in 0..simple_space[i].len() {
                 if let tetris::SpaceState::SettledTetromino(color) = simple_space[i][j] {
-                    let points = vec![[i as f32 - 0.5, j as f32 - 0.5], [i as f32 - 0.5, j as f32 + 0.5], [i as f32 + 0.5, j as f32 + 0.5],
-                                      [i as f32 - 0.5, j as f32 - 0.5], [i as f32 + 0.5, j as f32 + 0.5], [i as f32 + 0.5, j as f32 - 0.5]];
+                    let points = vec![
+                        [i as f32 - 0.5, j as f32 - 0.5],
+                        [i as f32 - 0.5, j as f32 + 0.5],
+                        [i as f32 + 0.5, j as f32 + 0.5],
+                        [i as f32 - 0.5, j as f32 - 0.5],
+                        [i as f32 + 0.5, j as f32 + 0.5],
+                        [i as f32 + 0.5, j as f32 - 0.5],
+                    ];
                     let mut points_proper = points_to_points_proper(points, color);
                     vertices.append(&mut points_proper);
                 }
@@ -113,7 +132,13 @@ fn main() {
             matrix: Mat4::identity().scale_by(0.1, 0.1, 1.0).translate_by(-0.5, -0.95, 0.0).matrix,
         };
         target
-            .draw(&vertex_buffer, &index_buffer, &program, &uniforms, &Default::default())
+            .draw(
+                &vertex_buffer,
+                &index_buffer,
+                &program,
+                &uniforms,
+                &Default::default(),
+            )
             .unwrap();
 
         target.finish().unwrap();
