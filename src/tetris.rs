@@ -13,8 +13,8 @@ pub struct PlaySpace {
     lines_cleared: i32,
     color: (f32, f32, f32),
     current_tetromino: Tetromino,
-    current_tetromino_rotation: i32,
-    falling_position: (i32, i32),
+    current_tetromino_rotation: usize,
+    falling_position: (usize, usize),
     // top left block
     time_since_movement: i32,
 }
@@ -35,9 +35,9 @@ impl PlaySpace {
     }
 
     pub fn tick(&mut self) {
-        if (self.time_since_movement > 10) {
-            if (self.can_fall()) {
-                self.falling_position[1] -= 1;
+        if self.time_since_movement > 10 {
+            if self.can_fall() {
+                self.falling_position.1 -= 1;
             } else {
                 self.space = self.space_with_falling_as_settled();
             }
@@ -49,10 +49,10 @@ impl PlaySpace {
         let mut new_space = self.space.clone();
         for i in 0..4 {
             for j in 0..4 {
-                if (self.current_tetromino.map[self.current_tetromino_rotation][i][j]
-                    == SpaceState::FallingTetromino)
+                if let SpaceState::FallingTetromino =
+                self.current_tetromino.map[self.current_tetromino_rotation][i][j]
                 {
-                    new_space[self.falling_position[0] + j][self.falling_position[1] - i] =
+                    new_space[self.falling_position.0 + j][self.falling_position.1 - i] =
                         SpaceState::SettledTetromino(self.current_tetromino.color);
                 }
             }
@@ -61,30 +61,34 @@ impl PlaySpace {
     }
 
     fn can_fall(&self) -> bool {
-        let mut lowest_in_col = [-1; 4];
+        let mut lowest_in_col = [usize::MAX; 4];
         for i in 0..4 {
             for j in 0.. {
-                if (self.current_tetromino.map[self.current_tetromino_rotation][i][j]
-                    == SpaceState::FallingTetromino
-                    && i > lowest_in_col[j])
+                if let SpaceState::FallingTetromino =
+                self.current_tetromino.map[self.current_tetromino_rotation][i][j]
                 {
-                    lowest_in_col[j] = i;
+                    if i > lowest_in_col[j] {
+                        lowest_in_col[j] = i;
+                    }
                 }
             }
         }
         for i in 0..4 {
-            let x_test = self.falling_position[0] + i;
-            if (x_test > 21 || x_test < 0) {
+            let x_test = self.falling_position.0 + i;
+            if x_test > 21 || x_test < 0 {
                 continue;
             }
-            let y_test = self.falling_position[1] - lowest_in_col[i] - 1;
-            if (y_test < 0) {
+            let y_test = self.falling_position.1 - lowest_in_col[i] - 1;
+            if y_test < 0 {
                 return false;
-            } else if (y_test == -1) {
+            } else if y_test == usize::MAX {
                 continue;
             }
-            if (self.space[x_test][y_test] != SpaceState::Empty) {
-                return false;
+            match self.space[x_test][y_test] {
+                SpaceState::Empty => {}
+                _ => {
+                    return false;
+                }
             }
         }
         return true;

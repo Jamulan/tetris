@@ -1384,11 +1384,11 @@ dependencies = [
     "bitflags",
     "downcast-rs",
     "libc",
- "nix 0.20.0",
- "scoped-tls",
- "wayland-commons",
- "wayland-scanner",
- "wayland-sys",
+    "nix 0.20.0",
+    "scoped-tls",
+    "wayland-commons",
+    "wayland-scanner",
+    "wayland-sys",
 ]
 
 [[package]]
