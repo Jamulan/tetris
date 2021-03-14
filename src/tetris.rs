@@ -11,6 +11,8 @@ pub enum Action {
     None,
     MoveLeft,
     MoveRight,
+    RotateClockwise,
+    RotateCounterClockwise,
 }
 
 pub struct PlaySpace {
@@ -21,7 +23,7 @@ pub struct PlaySpace {
     current_tetromino: Tetromino,
     current_tetromino_rotation: usize,
     // top left block
-    falling_position: (usize, usize),
+    falling_position: (i32, usize),
     time_since_movement: i32,
 }
 
@@ -45,17 +47,21 @@ impl PlaySpace {
         match action {
             Action::MoveLeft => {
                 let mut can_move_left = true;
+                if self.falling_position.0 == -1 {
+                    can_move_left = false;
+                }
                 for i in 0..4 {
                     for j in 0..4 {
                         if let SpaceState::FallingTetromino =
                         self.current_tetromino.map[self.current_tetromino_rotation][i][j]
                         {
-                            if (self.falling_position.0 + i) as i32 == 0 {
+                            if self.falling_position.0 as usize + j == 0 {
                                 can_move_left = false;
                                 break;
                             }
                             if let SpaceState::SettledTetromino(_) = self.space
-                                [self.falling_position.0 + i - 1][self.falling_position.1 - j]
+                                [self.falling_position.0 as usize + j - 1]
+                                [self.falling_position.1 - i]
                             {
                                 can_move_left = false;
                                 break;
@@ -78,12 +84,13 @@ impl PlaySpace {
                         if let SpaceState::FallingTetromino =
                         self.current_tetromino.map[self.current_tetromino_rotation][i][j]
                         {
-                            if (self.falling_position.0 + i) as i32 == 9 {
+                            if (self.falling_position.0 as usize + j) as i32 == 9 {
                                 can_move_right = false;
                                 break;
                             }
                             if let SpaceState::SettledTetromino(_) = self.space
-                                [self.falling_position.0 + i + 1][self.falling_position.1 - j]
+                                [self.falling_position.0 as usize + j + 1]
+                                [self.falling_position.1 - i]
                             {
                                 can_move_right = false;
                                 break;
@@ -97,6 +104,18 @@ impl PlaySpace {
                 if can_move_right {
                     self.falling_position.0 = self.falling_position.0 + 1;
                     moved = true;
+                }
+            }
+            Action::RotateClockwise => {
+                self.current_tetromino_rotation = (self.current_tetromino_rotation + 1) % 4;
+                for i in 0..4 {
+                    for j in 0..4 {
+                        if let SpaceState::FallingTetromino =
+                        self.current_tetromino.map[self.current_tetromino_rotation][i][j]
+                        {
+                            // TODO
+                        }
+                    }
                 }
             }
             _ => {}
@@ -127,7 +146,8 @@ impl PlaySpace {
                 if let SpaceState::FallingTetromino =
                 self.current_tetromino.map[self.current_tetromino_rotation][i][j]
                 {
-                    new_space[self.falling_position.0 + j][self.falling_position.1 - i] =
+                    new_space[(self.falling_position.0 + j as i32) as usize]
+                        [self.falling_position.1 - i] =
                         SpaceState::SettledTetromino(self.current_tetromino.color);
                 }
             }
@@ -136,24 +156,21 @@ impl PlaySpace {
     }
 
     fn can_fall(&self) -> bool {
-        let mut lowest_in_col = [usize::MAX; 4];
+        let mut lowest_in_col = [0; 4];
         for i in 0..4 {
             for j in 0..4 {
                 if let SpaceState::FallingTetromino =
                 self.current_tetromino.map[self.current_tetromino_rotation][i][j]
                 {
-                    if i < lowest_in_col[j] {
+                    if i > lowest_in_col[j] {
                         lowest_in_col[j] = i;
                     }
                 }
             }
         }
         for i in 0..4 {
-            let x_test = self.falling_position.0 + i;
-            if x_test > 21 {
-                continue;
-            }
-            if lowest_in_col[i] == usize::MAX {
+            let x_test = (self.falling_position.0 + i as i32) as usize;
+            if x_test > 9 {
                 continue;
             }
             if self.falling_position.1 - lowest_in_col[i] == 0 {

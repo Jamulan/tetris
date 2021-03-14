@@ -7,6 +7,7 @@ mod tetris;
 
 use crate::lm::Mat4;
 use crate::tetris::PlaySpace;
+use glium::backend::glutin::glutin::event::DeviceEvent;
 use glium::{glutin, Surface};
 
 #[derive(Copy, Clone)]
@@ -56,12 +57,27 @@ fn main() {
 
     // Real(tm) render loop
     events_loop.run(move |event, _, control_flow| {
+        let mut currentAction = tetris::Action::None;
         match event {
             glutin::event::Event::WindowEvent { event, .. } => match event {
                 glutin::event::WindowEvent::CloseRequested => {
                     *control_flow = glutin::event_loop::ControlFlow::Exit;
                     return;
                 }
+                glutin::event::WindowEvent::KeyboardInput { input, .. } => match input.state {
+                    glutin::event::ElementState::Pressed => {
+                        if let 105 = input.scancode {
+                            currentAction = tetris::Action::MoveLeft;
+                        }
+                        if let 106 = input.scancode {
+                            currentAction = tetris::Action::MoveRight;
+                        }
+                        println!("{}", input.scancode);
+                    }
+                    glutin::event::ElementState::Released => match input.scancode {
+                        _ => {}
+                    },
+                },
                 _ => return,
             },
             glutin::event::Event::NewEvents(cause) => match cause {
@@ -76,7 +92,7 @@ fn main() {
             std::time::Instant::now() + std::time::Duration::from_nanos(16_666_667);
         *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
 
-        main_play_space.tick(tetris::Action::None);
+        main_play_space.tick(currentAction);
 
         let mut target = display.draw();
         target.clear_color(0.0, 0.0, 0.0, 1.0);
@@ -129,7 +145,7 @@ fn main() {
         }
         let vertex_buffer = glium::VertexBuffer::new(&display, &vertices).unwrap();
         let uniforms = uniform! {
-            matrix: Mat4::identity().scale_by(0.1, 0.1, 1.0).translate_by(-0.5, -0.95, 0.0).matrix,
+            matrix: Mat4::identity().scale_by(0.1, 0.1, 1.0).translate_by(-0.45, -0.95, 0.0).matrix,
         };
         target
             .draw(
