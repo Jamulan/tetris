@@ -11,7 +11,7 @@ pub struct PlaySpace {
     space: [[SpaceState; 22]; 10],
     score: i32,
     lines_cleared: i32,
-    color: (f32, f32, f32),
+    pub(crate) color: (f32, f32, f32),
     current_tetromino: Tetromino,
     current_tetromino_rotation: usize,
     falling_position: (usize, usize),
@@ -25,7 +25,7 @@ impl PlaySpace {
             space: [[SpaceState::Empty; 22]; 10],
             score: 0,
             lines_cleared: 0,
-            color: (0.0, 0.0, 0.0),
+            color: (1.0, 1.0, 1.0),
             current_tetromino: Tetromino::random(),
             current_tetromino_rotation: 0,
             falling_position: (4, 21),
@@ -42,6 +42,8 @@ impl PlaySpace {
                 self.space = self.space_with_falling_as_settled();
             }
             self.time_since_movement = 0;
+        } else {
+            self.time_since_movement += 1;
         }
     }
 
@@ -63,11 +65,11 @@ impl PlaySpace {
     fn can_fall(&self) -> bool {
         let mut lowest_in_col = [usize::MAX; 4];
         for i in 0..4 {
-            for j in 0.. {
+            for j in 0..4 {
                 if let SpaceState::FallingTetromino =
                 self.current_tetromino.map[self.current_tetromino_rotation][i][j]
                 {
-                    if i > lowest_in_col[j] {
+                    if i < lowest_in_col[j] {
                         lowest_in_col[j] = i;
                     }
                 }
@@ -75,15 +77,12 @@ impl PlaySpace {
         }
         for i in 0..4 {
             let x_test = self.falling_position.0 + i;
-            if x_test > 21 || x_test < 0 {
+            if x_test > 21 {
                 continue;
             }
+            if lowest_in_col[i] == usize::MAX { continue; }
+            if self.falling_position.1 - lowest_in_col[i] == 0 { return false; }
             let y_test = self.falling_position.1 - lowest_in_col[i] - 1;
-            if y_test < 0 {
-                return false;
-            } else if y_test == usize::MAX {
-                continue;
-            }
             match self.space[x_test][y_test] {
                 SpaceState::Empty => {}
                 _ => {

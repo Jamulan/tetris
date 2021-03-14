@@ -1,7 +1,7 @@
 #[derive(Clone, Copy)]
 pub struct Mat4 {
     // column major // ONLY USE FOR 2D STUFF,  could be updated for 3D but it isn't ready for it
-    matrix: [[f32; 4]; 4],
+    pub matrix: [[f32; 4]; 4],
 }
 
 impl Mat4 {
