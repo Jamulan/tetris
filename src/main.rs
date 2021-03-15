@@ -1,14 +1,14 @@
 #[macro_use]
 extern crate glium;
 extern crate image;
+extern crate rust_lm;
 
-mod lm;
 mod tetris;
 
-use crate::lm::Mat4;
 use crate::tetris::PlaySpace;
 use glium::backend::glutin::glutin::event::DeviceEvent;
 use glium::{glutin, Surface};
+use rust_lm::Mat4;
 
 #[derive(Copy, Clone)]
 struct Vertex {

@@ -53,7 +53,7 @@ impl PlaySpace {
                 for i in 0..4 {
                     for j in 0..4 {
                         if let SpaceState::FallingTetromino =
-                        self.current_tetromino.map[self.current_tetromino_rotation][i][j]
+                            self.current_tetromino.map[self.current_tetromino_rotation][i][j]
                         {
                             if self.falling_position.0 as usize + j == 0 {
                                 can_move_left = false;

@@ -1179,6 +1179,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "rust-lm"
+version = "0.1.0"
+source = "git+https://github.com/jamulan/rust-lm#8426b04a57cd098740584d2aff0f14a3afa344fb"
+
+[[package]]
 name = "rustc-demangle"
 version = "0.1.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1298,6 +1303,7 @@ dependencies = [
  "glium",
  "image",
  "rand",
+ "rust-lm",
 ]
 
 [[package]]
